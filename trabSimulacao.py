@@ -20,43 +20,45 @@ import matplotlib.pyplot as plt
 import time
 from scipy import stats
 import math
+import random
 import sys
 # %matplotlib inline
 
 class Fregues:
-  def __init__(self, tempo):
+  #rodada == -1 indica que freguês entrou no sistema na fase transiente
+  def __init__(self, tempo: float, rodada: int):
     #variáveis que indicam marcos no tempo
     self.tempo_chegada = tempo
-    self.__tempo_comeco_servico: time
-    self.__tempo_termino_servico: time
+    self.tempo_comeco_servico: float
+    self.tempo_termino_servico: float
       
     #variáveis que indicam duração
-    self.__tempo_em_servico: time
-    self.__tempo_em_espera: time
-    self.__tempo_total: time
+    self.tempo_em_servico: float
+    self.tempo_em_espera: float
+    self.tempo_total: float
       
     #variável que indica se cliente já entrou em serviço
-    self.__entrou_em_servico = False
+    self.entrou_em_servico = False
     
     #variável que indica se cliente já terminou o servico
-    self.__terminou_servico = False
+    self.terminou_servico = False
     
-  def entraEmServiço(tempo_comeco_servico):
-    self.__tempo_comeco_servico = tempo_comeco_servico
-    self.__entrou_em_servico = True
+  def entraEmServiço(tempo_comeco_servico: float):
+    self.tempo_comeco_servico = tempo_comeco_servico
+    self.entrou_em_servico = True
     
     #calcula o tempo que o freguês ficou em espera
-    self.__tempo_em_espera = self.__tempo_comeco_servico - self.__tempo_chegada
+    self.tempo_em_espera = self.tempo_comeco_servico - self.tempo_chegada
     
-  def terminaServico(tempo_termino_servico):
-    self.__tempo_termino_servico = tempo_termino_servico
-    self.__terminou_servico = True
+  def terminaServico(tempo_termino_servico: float):
+    self.tempo_termino_servico = tempo_termino_servico
+    self.terminou_servico = True
     
     #calcula o tempo que o freguês ficou em servico
-    self.__tempo_em_servico = self.__tempo_termino_servico - self.__tempo_comeco_servico
+    self.tempo_em_servico = self.tempo_termino_servico - self.tempo_comeco_servico
     
     #calcula o tempo total que o freguês ficou no sistema
-    self.__tempo_total = self.__tempo_em_espera + tempo_em_servico
+    self.tempo_total = self.tempo_em_espera + tempo_em_servico
 
     
     
@@ -67,14 +69,20 @@ class EntradaLista:
   def __init__(self, evento: int, fregues: Fregues):
     self.evento = evento
     self.fregues = fregues
-    
-    #o tempo em que o evento ocorreu é o tempo de chegada do fregues
-    self.tempo = fregues.tempo_chegada
+    if (evento == 0):
+      self.tempo = fregues.tempo_chegada
+    else if (evento == 1):
+      self.tempo = fregues.tempo_comeco_servico
+    else:
+      self.tempo = fregues.tempo_termino_servico
     
     
     
 class Fila:
-  def __init__(self, tx_chegada:float, tx_servico: float, k: int, tipo_fila: int):
+  def __init__(self, tx_chegada: float, tx_servico: float, k: int, n: int, tipo_fila: int):
+    
+    #indica se a fila é FCFS (0) ou LCFS (1)
+    self.__tipo_fila = tipo_fila
     
     #lista que será usada para efetuar o controle dos eventos que podem ocorrer no sistema
     self.__lista = []
@@ -89,7 +97,7 @@ class Fila:
     self.__n_pessoas_servico = 0
     
     #variável que indica o tempo total que se passou desde o início da simulação
-    self.__tempo_total: time
+    self.__tempo_total: float
      
     self.__tx_chegada = tx_chegada
     
@@ -98,20 +106,48 @@ class Fila:
     #quantidade de coletas a serem feitas
     self.__k = k
     
-    #variável que irá contar a quantidade de coletas
-    self.__contador = 0
+    #quantidade de rodadas a serem feitas
+    self.__n = n
+    
+    #variável que irá contar a quantidade de coletas feitas
+    self.__cont_coletas = 0
+    
+    #variável que irá contar a quantidade de rodadas feitas
+    self.__cont_rodadas = 0
+    
+    #matriz que irá guardar o tempo médio de espera na fila
+    #imediatamente antes de cada início de serviço
+    self.__Tq_mean = np.zeros([n, k])
+    
+    #matriz que irá guardar o a variância do tempo de espera na fila
+    #imediatamente antes de cada início de serviço
+    self.__Tq_var = np.zeros([n, k])
+    
+    #matriz que irá guardar o número médio de pessoas na fila de espera
+    #imediatamente antes de cada início de serviço
+    self.__Nq_mean = np.zeros([n, k])
+    
+    #matriz que irá guardar a variância do número de pessoas na fila de espera
+    #imediatamente antes de cada início de serviço
+    self.__Nq_var = np.zeros([n, k])
     
     #simula tempo até evento da primeira chegada e adiciona essa entrada na lista
     tempo_primeira_chegada = self.simulaTempoAteEvento(self.__tx_chegada)
-    fregues = Fregues(tempo_primeira_chegada)
+    fregues = Fregues(tempo_primeira_chegada, self.__cont_rodadas)
     entrada_lista = EntradaLista(0, fregues)
     self.addNovaEntrada(entrada_lista)
     
+  #cálculo das métricas referentes ao tempo e número de pessoas na fila de espera
+  def calcMetricasFilaEspera(fregues: Fregues):
+    #botar os cálculos necessários
+    
+  #simula o tempo até ocorrência do próximo evento, distribuído exponencialmente
   def simulaTempoAteEvento(taxa: float):
-    n = np.random.rand()
-    tempo = -math.log(1-n)/taxa
+    r = random.random()
+    tempo = -math.log(1-r)/taxa
     return tempo
     
+  #adiciona uma nova entrada na lista de controle
   def addNovaEntrada(nova_entrada: EntradaLista):
     #atualizando estado do sistema
     self.__lista.append(nova_entrada)
@@ -136,7 +172,7 @@ class Fila:
         #se chega alguém antes do freguês em serviço terminar
         if (tempo_chegada < tempo_termino):
           #não podemos esquecer de somar o tempo até a chegada com o tempo que decorreu até o momento
-          fregues = Fregues(tempo_chegada + self.__lista[-1].tempo)
+          fregues = Fregues(tempo_chegada + self.__lista[-1].tempo, self.__cont_rodadas)
           entrada_lista = EntradaLista(0, fregues)
         #se o freguês em serviço termina antes de chegar alguém
         else:
@@ -152,6 +188,16 @@ class Fila:
     #uma nova pessoa começou a ser servida
     if (nova_entrada.evento == 1):
       #atualizando estado do sistema
+      #como ocorreu o inicio de um serviço precisamos calcular as métricas
+      #de interesse referentes ao tempo e número de pessoas na fila de espera
+      calcMetricasFilaEspera(self.__lista[-1].fregues)
+      self.__cont_coletas = self.__cont_coletas + 1
+      if (self.__cont_coletas == self.__k):
+        self.__cont_coletas = 0
+        self.__cont_rodadas = self.__cont_rodadas + 1
+        if (self.__cont_rodadas == self.__n):
+          return
+        
       self.__n_pessoas_espera = self.__n_pessoas_espera - 1
       
       #preparando para gerar novo evento
@@ -159,7 +205,7 @@ class Fila:
       tempo_chegada = self.simulaTempoAteEvento(self.__tx_chegada)
       tempo_termino = self.simulaTempoAteEvento(self.__tx_servico)
       if (tempo_chegada < tempo_termino):
-        fregues = Fregues(tempo_chegada + self.__lista[-1].tempo)
+        fregues = Fregues(tempo_chegada + self.__lista[-1].tempo, self.__cont_rodadas)
         entrada_lista = EntradaLista(0, fregues)
       else:
         for (i in range(len(self.__lista)-1, -1, -1)):
@@ -171,7 +217,7 @@ class Fila:
       
     #uma pessoa acabou de completar seu serviço
     if (nova_entrada.evento == 2):
-      #atualizando estado do sistema
+      #atualizando estado do sistema        
       self.__n_pessoas_sist = self.__n_pessoas_sist - 1
       
       #preparando para gerar novo evento
@@ -179,7 +225,7 @@ class Fila:
       #precisamos botar alguém imediatamente em serviço, dependendo da política
       if (self.__n_pessoas_espera > 0):
         #correponde a FCFS
-        if (tipo_fila == 0):
+        if (self.__tipo_fila == 0):
           for (i in range(len(self.__lista))):
             #queremos encontrar o freguês que entrou há mais tempo na fila que ainda não foi servido
             if (self.__lista[i].evento == 0 and !self.__lista[i].fregues.entrou_em_servico):
@@ -198,7 +244,7 @@ class Fila:
       #se não tiver ninguém na fila de espera temos que esperar a próxima chegada
       else:
         tempo_chegada = self.simulaTempoAteEvento(self.__tx_chegada)
-        fregues = Fregues(tempo_chegada)
+        fregues = Fregues(tempo_chegada, self.__cont_rodadas)
         entrada_lista = EntradaLista(0, fregues)
     
     #gerando novo evento
@@ -207,9 +253,9 @@ class Fila:
     
     
 class ControladorFila:
-  #IC indica intervalo de confiança
-  #n_rodadas é o número de rodadas de simulação
+  #IC é o intervalo de confiança
+  #n é o número de rodadas de simulação
   #tipo_fila == 0 indica política FCFS
   #tipo_fila == 1 indica política LCFS
-  #k indica o número de coletas por rodada
-  def __init__(self, tx_chegada:float, tx_servico: float, IC: float, precisao: n_rodadas: int, k: int, float, tipo_fila: int, semente: int):
+  #k é o número de coletas por rodada
+  def __init__(self, tx_chegada: float, tx_servico: float, IC: float, precisao: float, n_rodadas: int, k: int, float, tipo_fila: int):
