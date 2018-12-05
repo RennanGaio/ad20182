@@ -18,7 +18,6 @@ Original file is located at
 import numpy as np
 import matplotlib.pyplot as plt
 import time
-import numpy.random
 from scipy import stats
 import math
 import sys
@@ -109,7 +108,8 @@ class Fila:
     self.addNovaEntrada(entrada_lista)
     
   def simulaTempoAteEvento(taxa: float):
-    tempo = 10
+    n = np.random.rand()
+    tempo = -math.log(1-n)/taxa
     return tempo
     
   def addNovaEntrada(nova_entrada: EntradaLista):
