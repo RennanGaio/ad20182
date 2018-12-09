@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.stats import chi2
 
 # fontes:
 # http://www.portalaction.com.br/inferencia/intervalo-de-confianca
@@ -65,12 +66,18 @@ def IC_da_media(mean_list):
 def IC_da_variacia(mean_list):
     #esse método utilizará a formula do qui-quadrado para medir a variancia
 
-    #dados obtidos na tabela da qui-quadrada para alpha=0.5, alpha/2 = 0.25
-    Qalpha2 = 74.222
-    Q1menosalpha2 = 129.561
-
     #qtd de amostras
     n = len(mean_list)
+
+    #dados obtidos na tabela da qui-quadrada para alpha=0.5, alpha/2 = 0.25
+    #Qalpha2 = 74.222
+    #Q1menosalpha2 = 129.561
+
+    #como na tabela de qui-quadrado só temos ate 100 graus de liberdade, tivemos que usar uma funcao
+    #auxiliar para calcular o valor dela para n = 3200
+    
+    Qalpha2 = chi2.isf(q=0.025, df=n-1)
+    Q1menosalpha2 = chi2.isf(q=0.975, df=n-1)
 
     #variancia amostral = SUM((Media - Media Amostral)^2) = S^2
     s_quadrado=np.sum( [(float(element) - float(mean))**2 for element in mean_list] ) / (n-1.0)
