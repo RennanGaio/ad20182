@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.stats import chi2
+import matplotlib.pyplot as plt
 
 # fontes:
 # http://www.portalaction.com.br/inferencia/intervalo-de-confianca
@@ -75,7 +76,7 @@ def IC_da_variacia(mean_list):
 
     #como na tabela de qui-quadrado só temos ate 100 graus de liberdade, tivemos que usar uma funcao
     #auxiliar para calcular o valor dela para n = 3200
-    
+
     Qalpha2 = chi2.isf(q=0.025, df=n-1)
     Q1menosalpha2 = chi2.isf(q=0.975, df=n-1)
 
@@ -103,6 +104,18 @@ def soma_area(area_anterior, tempo_inicial, tempo_do_proximo_evento, nq):
 def calcula_nq(area, tempo_inicial, tempo_final):
     tempo = tempo_final-tempo_inicial
     return area_final/tempo
+
+#a matriz de entrada desta funcao deve ter em cada linha tuplas com a (quantidade de pessoas) ou (tempo medio no sistema) pelo periodo de cada evento
+#e cada linha deve ser representativa da execucao de todo o sistema do ro respectivamente 0.2, 0.4, 0.6, 0.8 e 0.9
+def printa_grafico_numero_medio_por_tempo(matriz_de_metricas_por_ro):
+
+    for ro_metrics in matriz_de_metricas_por_ro:
+        plt.plot(*zip(*ro_metrics))
+
+    plt.legend(['ro = 0.2', 'ro = 0.4', 'ro = 0.6', 'ro = 0.8', 'ro = 0.9'], loc='upper left')
+
+    plt.show()
+
 
 #funcao esqueleto para definir o fim de uma fase transiente, e comecar as rodadas normais
 def Fase_transiente():
