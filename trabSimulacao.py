@@ -79,7 +79,12 @@ class EntradaLista:
     
     
 class Fila:
-  def __init__(self, tx_chegada: float, tx_servico: float, k: int, n: int, tipo_fila: int):
+  #IC é o intervalo de confiança
+  #n é o número de rodadas de simulação
+  #tipo_fila == 0 indica política FCFS
+  #tipo_fila == 1 indica política LCFS
+  #k é o número de coletas por rodada
+  def __init__(self, tx_chegada: float, tx_servico: float, k: int, n: int, tipo_fila: int, IC: float, precisao: float, utilizacao: float):
     
     #indica se a fila é FCFS (0) ou LCFS (1)
     self.__tipo_fila = tipo_fila
@@ -87,13 +92,13 @@ class Fila:
     #lista que será usada para efetuar o controle dos eventos que podem ocorrer no sistema
     self.__lista = []
     
-    #variável que indica a quantidade de pessoas no sistema
+    #variável que indica a quantidade de pessoas no sistema atualmente
     self.__n_pessoas_sist = 0
     
-    #variável que indica a quantidade de pessoas na fila de espera
+    #variável que indica a quantidade de pessoas na fila de espera atualmente
     self.__n_pessoas_espera = 0
     
-    #variável que indica a quantidade de pessoas em serviço
+    #variável que indica a quantidade de pessoas em serviço atualmente
     self.__n_pessoas_servico = 0
     
     #variável que indica o tempo total que se passou desde o início da simulação
@@ -116,20 +121,31 @@ class Fila:
     self.__cont_rodadas = 0
     
     #matriz que irá guardar o tempo médio de espera na fila
-    #imediatamente antes de cada início de serviço
-    self.__Tq_mean = np.zeros([n, k])
-    
-    #matriz que irá guardar o a variância do tempo de espera na fila
-    #imediatamente antes de cada início de serviço
-    self.__Tq_var = np.zeros([n, k])
+    self.__Tq_mean = np.zeros([1, n])
     
     #matriz que irá guardar o número médio de pessoas na fila de espera
-    #imediatamente antes de cada início de serviço
-    self.__Nq_mean = np.zeros([n, k])
-    
-    #matriz que irá guardar a variância do número de pessoas na fila de espera
-    #imediatamente antes de cada início de serviço
-    self.__Nq_var = np.zeros([n, k])
+    self.__Nq_mean = np.zeros([1, n])
+	
+	#variável que irá guardar a área a cada chegada à fila e cada entrada em serviço
+	self.__area = 0
+	
+	#variável que irá guardar o tempo de ocorrência
+	#do evento de interesse anterior
+	self.__tempo_evento_ant = 0
+	
+	#variável que irá guardar o tempo de ocorrência
+	#do evento de interesse atual
+	self.__tempo_evento_atual = 0
+	
+	#variável que irá guardar quantas pessoas passaram pela fila de espera
+	self.__n_pessoas_passaram_fila = 0
+	
+	#variável que irá guardar o tempo total que foi passado na fila de espera
+	self.__tempo_total_espera = 0
+	
+	self.__tempo_inicio_rodada = 0
+	
+	self.__tempo_fim_rodada: float
     
     #simula tempo até evento da primeira chegada e adiciona essa entrada na lista
     tempo_primeira_chegada = self.simulaTempoAteEvento(self.__tx_chegada)
@@ -140,11 +156,18 @@ class Fila:
   #cálculo das métricas referentes ao tempo e número de pessoas na fila de espera
   def calcMetricasFilaEspera(fregues: Fregues):
     #botar os cálculos necessários
+	
+  def somaArea():
+	self.__area = self.__area + self.__n_pessoas_espera*(self.__tempo_evento_atual - self.__tempo_evento_ant)
+	self.__tempo_evento_ant = self.__tempo_evento_atual
+	
+  def calculaNq():
+	return self.__area/(self.__tempo_fim_rodada - self.__tempo_inicio_rodada)
     
   #simula o tempo até ocorrência do próximo evento, distribuído exponencialmente
   def simulaTempoAteEvento(taxa: float):
     r = random.random()
-    tempo = -math.log(1-r)/taxa
+    tempo = -math.log(r)/taxa
     return tempo
     
   #adiciona uma nova entrada na lista de controle
@@ -155,6 +178,9 @@ class Fila:
     #chegou uma nova pessoa na fila
     if (nova_entrada.evento == 0):
       #atualizando estado do sistema
+	  self.__tempo_evento_ant = self.__tempo_evento_atual
+	  self.__tempo_evento_atual = self.__lista[-1].tempo
+	  self.somaArea()
       self.__n_pessoas_espera = self.__n_pessoas_espera + 1
       self.__n_pessoas_sist = self.__n_pessoas_sist + 1
       
@@ -188,12 +214,17 @@ class Fila:
     #uma nova pessoa começou a ser servida
     if (nova_entrada.evento == 1):
       #atualizando estado do sistema
+	  self.__tempo_evento_ant = self.__tempo_evento_atual
+	  self.__tempo_evento_atual = self.__lista[-1].tempo
+	  self.somaArea()
+	  self.__tempo_total_espera = self.__tempo_total_espera + self.__lista[-1].fregues.tempo_comeco_servico - self.__lista[-1].fregues.tempo_chegada
       #como ocorreu o inicio de um serviço precisamos calcular as métricas
       #de interesse referentes ao tempo e número de pessoas na fila de espera
       calcMetricasFilaEspera(self.__lista[-1].fregues)
       self.__cont_coletas = self.__cont_coletas + 1
       if (self.__cont_coletas == self.__k):
         self.__cont_coletas = 0
+		self.__area = 0
         self.__cont_rodadas = self.__cont_rodadas + 1
         if (self.__cont_rodadas == self.__n):
           return
@@ -249,13 +280,15 @@ class Fila:
     
     #gerando novo evento
     self.addNovaEntrada(entrada_lista)
-    
-    
-    
-class ControladorFila:
-  #IC é o intervalo de confiança
-  #n é o número de rodadas de simulação
-  #tipo_fila == 0 indica política FCFS
-  #tipo_fila == 1 indica política LCFS
-  #k é o número de coletas por rodada
-  def __init__(self, tx_chegada: float, tx_servico: float, IC: float, precisao: float, n_rodadas: int, k: int, float, tipo_fila: int):
+	
+if __name__ == '__main__':
+	vetor_utilizacoes = np.array([0.2, 0.4, 0.6, 0.8, 0.9])
+	n_utilizacoes = vetor_utilizacoes.shape[1]
+	mat_kmins = np.matrix([100, 150, 200], [100, 150, 200])
+	n_kmins = mat_kmins.shape[1]
+	n_rodadas = 3200
+	n_tipos_fila = 2
+	IC = 0.95
+	precisao = 0.05
+	Nq = np.zeros([n_tipos_fila, n_kmins, n_utilizacoes])
+	Tq = np.zeros([n_tipos_fila, n_kmins, n_utilizacoes])
