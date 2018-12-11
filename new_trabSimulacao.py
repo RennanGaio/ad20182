@@ -310,12 +310,12 @@ def ICDaMedia(mean_list):
     center = lower + (upper - lower)/2.0
 
     if center/10.0 < (upper - lower):
-        print center/10.0
-        print upper - lower
-        aprovado = "nao"
-        print "teste IC da media não obteve precisao de 5%, intervalo maior do que 10% do valor central"
+        #print center/10.0
+        #print upper - lower
+        aprovado = False
+        #print "teste IC da media não obteve precisao de 5%, intervalo maior do que 10% do valor central"
     else:
-        aprovado="sim"
+        aprovado=True
 
     #retorna o limite inferior, limite superior, o valor central e a precisão, nessa ordem.
     return (lower, upper, center, aprovado)
@@ -352,12 +352,12 @@ def ICDaVariacia(mean_list):
     center = lower + (upper - lower)/2.0
 
     if center/10.0 < (upper - lower):
-        print center/10.0
-        print upper - lower
-        aprovado="nao"
-        print "teste IC da variancia não obteve precisao de 5%, intervalo maior do que 10% do valor central"
+        #print center/10.0
+        #print upper - lower
+        aprovado=False
+        #print "teste IC da variancia não obteve precisao de 5%, intervalo maior do que 10% do valor central"
     else:
-        aprovado="sim"
+        aprovado=True
 
     #retorna o limite inferior, limite superior, o valor central e a precisão, nessa ordem.
     return (lower, upper, center, aprovado)
