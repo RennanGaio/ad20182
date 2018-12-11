@@ -379,8 +379,8 @@ def printa_grafico_numero_medio_por_tempo(matriz_de_metricas_por_ro):
 
 
 if __name__ == '__main__':
-    #vetor_lamb = [0.2, 0.4, 0.6, 0.8, 0.9]
-    vetor_lamb = [0.9]
+    vetor_lamb = [0.2, 0.4, 0.6, 0.8, 0.9]
+    #vetor_lamb = [0.9]
     mi = 1
     #kmins = [100, 300, 500, 700, 1000]
     kmins = [100]
