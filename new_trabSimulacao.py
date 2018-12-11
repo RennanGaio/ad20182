@@ -268,7 +268,9 @@ class Simulador:
                     #print "fase transiente"
                     #print self.is_transiente
                     #caso chegue ao fim da fase transiente, entao comecamos a rodada 0
-                    if not self.is_transiente:
+                    #estarei estabelecendo um fim forcado para a fase transiente caso os tempos nao consigam convergir!
+                    #esse tempo será o equivalente a 10 vezes o tamanho da rodada
+                    if not self.is_transiente or len(self.fregueses_atendidos_rodada) > (10*self.min_k):
                         self.rodada_atual +=1
                         self.fregueses_atendidos_rodada = []
                         self.tempo_inicio_rodada = self.tempo
@@ -380,19 +382,20 @@ def printa_grafico_numero_medio_por_tempo(matriz_de_metricas_por_ro):
 
 
 if __name__ == '__main__':
-    vetor_lamb = [0.2, 0.4, 0.6, 0.8, 0.9]
+    #vetor_lamb = [0.2, 0.4, 0.6, 0.8, 0.9]
+    vetor_lamb = [0.9]
     mi = 1
     #kmins = [100, 300, 500, 700, 1000]
-    kmins = [100]
+    kmins = [1000]
     n_rodadas = 3200
     n_tipos_fila = ["FCFS", "LCFS"]
     # IC = 0.95
     # precisao = 0.05
 
     for tipo_fila in n_tipos_fila:
-        for k in kmins:
-            for lamb in vetor_lamb:
-
+        for lamb in vetor_lamb:
+            for k in kmins:
+            #for lamb in vetor_lamb:
                 #self, tx_chegada: float, tx_servico: float, k: int, n: int, tipo_fila: int, IC: float, precisao: float, utilizacao: float):
                 simulador = Simulador(lamb, mi, k, n_rodadas, tipo_fila)
                 simulador.iniciaProcesso()
@@ -461,11 +464,11 @@ if __name__ == '__main__':
                     kmins.append(k+100)
                     print "NOVO VALOR DE K = " + str(k+100)
                     print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
-                    break
 
 
 
 
-        #         break
-        #     break
-        # break
+
+                break
+            break
+        break
