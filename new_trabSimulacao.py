@@ -17,12 +17,10 @@ Original file is located at
 
 import numpy as np
 import matplotlib.pyplot as plt
-import time
 from scipy import stats
 import math
 import random
 from scipy.stats import chi2
-import sys
 
 #TODO
 # def buscaBinaria(vet, num):
@@ -383,7 +381,7 @@ if __name__ == '__main__':
     #vetor_lamb = [0.9]
     mi = 1
     #kmins = [100, 300, 500, 700, 1000]
-    kmins = [100]
+    kmins = [150]
     n_rodadas = 3200
     n_tipos_fila = ["FCFS", "LCFS"]
     # IC = 0.95
@@ -438,7 +436,8 @@ if __name__ == '__main__':
 
                     #fim da simulacao
                     print "fim da simulacao com lamb = " + str(lamb) + ", k = " + str(k) + ", tipo de fila = " + tipo_fila
-                    print "######################################################################################"
+                    print "#######################################################################"
+
 
 
                     #area de teste para prints de graficos para o Trabalho
@@ -456,11 +455,11 @@ if __name__ == '__main__':
                     #significa que a quantidade minima de eventos por rodada nao foi o suficiente para gerar os resultados esperados
                     #entao incrementamos a quantidade de rodadas minimas para a proxima bateria de testes, e como essa já nao é mais valida,
                     #os resultados com esse k nao sao mais interessantes
-                    print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+                    print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
                     print "CONFIANÇA EXIGIDA NÃO FOI ATENDIDA, PULANDO PARA A PROXIMA ITERACAO COM K INCREMENTADO DE 100"
                     kmins.append(k+100)
                     print "NOVO VALOR DE K = " + str(k+100)
-                    print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+                    print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
 
 
 
