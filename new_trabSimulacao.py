@@ -97,7 +97,6 @@ class Simulador:
 
         self.tempo = 0.0
 
-        #self.total_clientes = 0
         self.servidor_ocupado = False
         #-1 pois comeca na fase transiente
         self.rodada_atual = -1
@@ -105,8 +104,6 @@ class Simulador:
         #listas do Simulador
         #lista de eventos que vai comandar a ordem em que acontecem as chegadas e saidas
         self.lista_de_eventos = []
-
-        #self.fila = deque()
 
         #fila da MM1, que terao clientes esperando para serem atendidos
         self.fila_de_fregueses = []
@@ -386,7 +383,7 @@ if __name__ == '__main__':
     vetor_lamb = [0.9]
     mi = 1
     #kmins = [100, 300, 500, 700, 1000]
-    kmins = [1000]
+    kmins = [100]
     n_rodadas = 3200
     n_tipos_fila = ["FCFS", "LCFS"]
     # IC = 0.95
