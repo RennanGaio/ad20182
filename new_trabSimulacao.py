@@ -293,6 +293,8 @@ def ICDaMedia(mean_list):
     #percentil da T-student para mais de 120 amostras
     percentil = 1.645
 
+    aprovado=""
+
     #qtd de amostras
     n = len(mean_list)
 
@@ -311,10 +313,13 @@ def ICDaMedia(mean_list):
     if center/10.0 < (upper - lower):
         print center/10.0
         print upper - lower
+        aprovado = "nao"
         print "teste IC da media não obteve precisao de 5%, intervalo maior do que 10% do valor central"
+    else:
+        aprovado="sim"
 
     #retorna o limite inferior, limite superior, o valor central e a precisão, nessa ordem.
-    return (lower, upper, center)
+    return (lower, upper, center, aprovado)
 
 
 def ICDaVariacia(mean_list):
@@ -322,6 +327,8 @@ def ICDaVariacia(mean_list):
 
     #qtd de amostras
     n = len(mean_list)
+
+    aprovado=""
 
     #média amostral
     mean = np.sum(mean_list)/n
@@ -348,10 +355,13 @@ def ICDaVariacia(mean_list):
     if center/10.0 < (upper - lower):
         print center/10.0
         print upper - lower
+        aprovado="nao"
         print "teste IC da variancia não obteve precisao de 5%, intervalo maior do que 10% do valor central"
+    else:
+        aprovado="sim"
 
     #retorna o limite inferior, limite superior, o valor central e a precisão, nessa ordem.
-    return (lower, upper, center)
+    return (lower, upper, center, aprovado)
 
 
 
@@ -372,13 +382,12 @@ def printa_grafico_numero_medio_por_tempo(matriz_de_metricas_por_ro):
 if __name__ == '__main__':
     vetor_lamb = [0.2, 0.4, 0.6, 0.8, 0.9]
     mi = 1
-    kmins = [100, 300, 500, 700, 1000]
-    #kmins = [300]
-    #n_rodadas = 3200
+    #kmins = [100, 300, 500, 700, 1000]
+    kmins = [100]
     n_rodadas = 3200
     n_tipos_fila = ["FCFS", "LCFS"]
-    IC = 0.95
-    precisao = 0.05
+    # IC = 0.95
+    # precisao = 0.05
 
     for tipo_fila in n_tipos_fila:
         for k in kmins:
@@ -395,18 +404,64 @@ if __name__ == '__main__':
                 tempos = [t.tempoEmEspera() for t in simulador.todos_fregueses_atendidos]
                 pessoas_na_fila = simulador.qtd_total_pessoas_fila
 
-                lowerM, upperM, centerM = ICDaMedia(wbarra)
-                lowerV, upperV, centerV = ICDaVariacia(nqbarra)
+                lowerMW, upperMW, centerMW , aprovadoMW= ICDaMedia(wbarra)
+                lowerMNq, upperMNq, centerMNq , aprovadoMNq= ICDaMedia(nqbarra)
+                lowerVW, upperVW, centerVW , aprovadoVW= ICDaVariacia(wbarra)
+                lowerVNq, upperVNq, centerVNq , aprovadoVNq= ICDaVariacia(nqbarra)
 
-                print "media amostral = "+ str(np.mean(wbarra))
-                print "intervalo de confiança = " + str(lowerM) + " ate " + str(upperM)
-                print "fim da rodada com lamb = " + str(lamb) + " k = " + str(k) + " tipo de fila = " + tipo_fila
+                if aprovadoMW and aprovadoVW and aprovadoMNq and aprovadoVNq:
 
-                #plt.plot(tempos[0:k])
-                #plt.show()
+                    print "RESULTADOS DA SIMULACAO COM LAMB = " + str(lamb) + ", K = " + str(k) + ", TIPO DE FILA = " + tipo_fila
+                    #print "media amostral = "+ str(np.mean(wbarra))
+                    print "\n"
+                    #item a
+                    print "Tempo médio de espera em fila = "+str(centerMW)
+                    print "intervalo de confiança da espera em fila = " + str(lowerMW) + " ate " + str(upperMW)
+                    print "tamanho do intervalo de confianca do tempo medio = " + str(upperMW-lowerMW)
+                    print "\n"
 
-                #plt.plot(pessoas_na_fila)
-                #plt.show()
+                    #item b
+                    print "Variancia média de espera em fila = "+str(centerVW)
+                    print "intervalo de confiança da variancia do tempo em fila = " + str(lowerVW) + " ate " + str(upperVW)
+                    print "\n"
+
+                    #item c
+                    print "Nq médio da fila = "+str(centerMNq)
+                    print "intervalo de confiança de Nq= " + str(lowerMNq) + " ate " + str(upperMNq)
+                    print "tamanho do intervalo de confianca do tempo medio = " + str(upperMW-lowerMW)
+                    print "\n"
+
+                    #item d
+                    print "Variancia média de Nq = "+str(centerVW)
+                    print "intervalo de confiança da variancia de Nq = " + str(lowerVW) + " ate " + str(upperVW)
+                    print "\n"
+
+                    #fim da simulacao
+                    print "fim da simulacao com lamb = " + str(lamb) + ", k = " + str(k) + ", tipo de fila = " + tipo_fila
+                    print "######################################################################################"
+
+
+                    #area de teste para prints de graficos para o Trabalho
+                    #essa parte do codigo ficara comentada para nao gerar centenas de graficos especificos em todas as execucoes
+
+
+                    #plt.plot(tempos[0:k])
+                    #plt.show()
+
+                    #plt.plot(pessoas_na_fila)
+                    #plt.show()
+
+
+                else:
+                    #significa que a quantidade minima de eventos por rodada nao foi o suficiente para gerar os resultados esperados
+                    #entao incrementamos a quantidade de rodadas minimas para a proxima bateria de testes, e como essa já nao é mais valida,
+                    #os resultados com esse k nao sao mais interessantes
+                    print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+                    print "CONFIANÇA EXIGIDA NÃO FOI ATENDIDA, PULANDO PARA A PROXIMA ITERACAO COM K INCREMENTADO DE 100"
+                    kmins.append(k+100)
+                    print "NOVO VALOR DE K = " + str(k+100)
+                    print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+                    break
 
 
 
