@@ -113,6 +113,7 @@ class Simulador:
 
         #lista para salvar dados dos clientes para a geracao de graficos
         self.todos_fregueses_atendidos = []
+        self.qtd_total_pessoas_fila = []
 
         #listas que irao guardar metricas
         self.W_barra_por_rodada = []
@@ -133,7 +134,7 @@ class Simulador:
         r = random.random()
         # podemos utilizar dessa forma optimizada, pois tanto 1-r, quanto r sao numeros aleatorios de 0 a 1, dessa forma,
         # economizamos 1 operacao de subtracao por numero gerado
-        tempo = -math.log(r)/taxa
+        tempo = (-1.0 * math.log(r)) / (taxa + 0.0)
         return tempo
 
     #funcao auxiliar para o calculo de pessoas na fila
@@ -177,9 +178,9 @@ class Simulador:
             self.is_transiente=False
 
     def adicionaWBarraDaRodada(self):
-        n = len(self.fregueses_atendidos_rodada)
+        n = float(len(self.fregueses_atendidos_rodada))
         tempos_de_fila = [fregues.tempoEmEspera() for fregues in self.fregueses_atendidos_rodada]
-        self.W_barra_por_rodada.append(np.sum(tempos_de_fila)/n)
+        self.W_barra_por_rodada.append( np.sum(tempos_de_fila) / n )
 
 
 
@@ -236,6 +237,9 @@ class Simulador:
             #atualiza o valor do tempo do evento que acabou de acontecer, o proximo evento anterior
             self.tempo_evento_anterior = self.tempo
 
+            #coleta de dados para gerar grafico
+            self.qtd_total_pessoas_fila.append(len(self.fila_de_fregueses))
+
             #Se apois os eventos ocorrerem, existir alguem na fila e o servidor estiver acabado de ser liberado
             #Entao o programa vai servir o proximo fregues que esta em espera, com relacao a politica de atendimento
             if len(self.fila_de_fregueses) != 0 and not self.servidor_ocupado:
@@ -254,6 +258,8 @@ class Simulador:
 
                 #servidor passa a estar ocupado
                 self.servidor_ocupado = True
+
+
 
             if len(self.fregueses_atendidos_rodada) >= self.min_k:
                 if self.is_transiente:
@@ -300,9 +306,11 @@ def ICDaMedia(mean_list):
     lower = mean - (percentil*(s/math.sqrt(n)))
     upper = mean + (percentil*(s/math.sqrt(n)))
 
-    center = lower + (upper - lower)/2
+    center = lower + (upper - lower)/2.0
 
-    if center/10 > (upper - lower):
+    if center/10.0 < (upper - lower):
+        print center/10.0
+        print upper - lower
         print "teste IC da media não obteve precisao de 5%, intervalo maior do que 10% do valor central"
 
     #retorna o limite inferior, limite superior, o valor central e a precisão, nessa ordem.
@@ -335,14 +343,28 @@ def ICDaVariacia(mean_list):
     lower = (n-1)*s_quadrado/Q1menosalpha2
     upper = (n-1)*s_quadrado/Qalpha2
 
-    center = lower + (upper - lower)/2
+    center = lower + (upper - lower)/2.0
 
-    if center/10 > (upper - lower):
+    if center/10.0 < (upper - lower):
+        print center/10.0
+        print upper - lower
         print "teste IC da variancia não obteve precisao de 5%, intervalo maior do que 10% do valor central"
 
     #retorna o limite inferior, limite superior, o valor central e a precisão, nessa ordem.
     return (lower, upper, center)
 
+
+
+#a matriz de entrada desta funcao deve ter em cada linha tuplas com a (quantidade de pessoas) ou (tempo medio no sistema) pelo periodo de cada evento
+#e cada linha deve ser representativa da execucao de todo o sistema do ro respectivamente 0.2, 0.4, 0.6, 0.8 e 0.9
+def printa_grafico_numero_medio_por_tempo(matriz_de_metricas_por_ro):
+
+    for ro_metrics in matriz_de_metricas_por_ro:
+        plt.plot(*zip(*ro_metrics))
+
+    plt.legend(['ro = 0.2', 'ro = 0.4', 'ro = 0.6', 'ro = 0.8', 'ro = 0.9'], loc='upper left')
+
+    plt.show()
 
 
 
@@ -351,8 +373,9 @@ if __name__ == '__main__':
     vetor_lamb = [0.2, 0.4, 0.6, 0.8, 0.9]
     mi = 1
     kmins = [100, 300, 500, 700, 1000]
+    #kmins = [300]
+    #n_rodadas = 3200
     n_rodadas = 3200
-    #n_rodadas = 10
     n_tipos_fila = ["FCFS", "LCFS"]
     IC = 0.95
     precisao = 0.05
@@ -369,11 +392,21 @@ if __name__ == '__main__':
                 nqbarra = simulador.Nq_barra_por_rodada
                 wbarra = simulador.W_barra_por_rodada
 
+                tempos = [t.tempoEmEspera() for t in simulador.todos_fregueses_atendidos]
+                pessoas_na_fila = simulador.qtd_total_pessoas_fila
+
                 lowerM, upperM, centerM = ICDaMedia(wbarra)
                 lowerV, upperV, centerV = ICDaVariacia(nqbarra)
 
+                print "media amostral = "+ str(np.mean(wbarra))
+                print "intervalo de confiança = " + str(lowerM) + " ate " + str(upperM)
                 print "fim da rodada com lamb = " + str(lamb) + " k = " + str(k) + " tipo de fila = " + tipo_fila
 
+                #plt.plot(tempos[0:k])
+                #plt.show()
+
+                #plt.plot(pessoas_na_fila)
+                #plt.show()
 
 
 
